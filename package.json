@@ -1,0 +1,17 @@
+{
+  "name": "qrcode",
+  "version": "1.0.0",
+  "description": "",
+  "main": "qrcode.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "lidong",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.0",
+    "request": "^2.88.0",
+    "socket.io": "^2.2.0",
+    "ws": "1.1.1"
+  }
+}
