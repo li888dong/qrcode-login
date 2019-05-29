@@ -1,28 +1,33 @@
-const WebSocket = require('ws');
-const WebSocketServer = WebSocket.Server;
+var express = require('express');
+var app = express();
+var expressWs = require('express-ws')(app);
 const request = require('request');
-
-
-// 创建 websocket 服务器 监听在 2727 端口
-const wss = new WebSocketServer({port: 2727});
 
 let socketList = {};
 // 服务器被客户端连接
-wss.on('connection', (ws) => {
+
+app.ws('/websocket/', function (ws, req) {
     let clientid;
+
+    //socket失去连接时触发（包括关闭浏览器，主动断开，掉线等任何断开连接的情况）
+    ws.on('disconnect', function () {
+        console.log("client disconnect");
+        //客户端失去
+        delete socketList[clientid];
+    });
+
     // 接收客户端信息并把信息返回发送
     ws.on('message', (msg) => {
         if (msg == 'reqAuthId') {
             request('https://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=get_code', function (err, res, body) {
                 var json = JSON.parse(body);
-                console.log(json)
                 if (json.status == 1) {
                     clientid = json.data.admin_code;
                     //用来保存socket,键值为id
                     socketList[clientid] = ws;
                     // console.log(ws);
                     // 执行返回id的操作
-                    console.log(clientid);
+
                     let resData = {"type": "receivedId", "clientid": clientid};
                     ws.send(JSON.stringify(resData));
                     // socket.emit('receivedId', clientid);
@@ -33,31 +38,32 @@ wss.on('connection', (ws) => {
 
             });
         } else if (msg.startsWith('wxLogin')) {
-            let authId = msg.split('wxLogin')[0];
-            let code = msg.split('wxLogin')[1];
 
-            request('https://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=wx_login&admin_code=' + authId + '&code=' + code, function (err, res, body) {
-                let resData = {"type": "loginStatus", "data": body};
-                ws.send(JSON.stringify(resData));
-            });
-            // 根据传过来的id判断socket实例 返回登陆状态
+            let authId = msg.split('wxLogin')[1];
+            let code = msg.split('wxLogin')[2];
+            let reqUrl = 'https://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=weixin_login&admin_code=' + authId + '&code=' + code;
+
+            let resData = {
+                type: 'pcLogin',
+                reqUrl: reqUrl
+            };
+
+            // 根据传过来的id判断socket实例 pc网页端发起登陆请求
             for (var key in socketList) {
                 if (key == authId) {
-                    socketList[authId].send('loginSuccess');
+                    // 给电脑端返回登陆成功
+                    socketList[authId].send(JSON.stringify(resData));
                     // 给手机登陆页返回登陆成功
-                    ws.send('loginSuccess');
+                    ws.send('{"type": "pcLogin"}');
                     return
                 }
             }
+
         } else {
             console.log(msg)
         }
 
     });
+});
 
-    ws.on('close', () => {
-        console.log("client disconnect");
-        //客户端失去
-        delete socketList[clientid];
-    })
-})
+app.listen(2727);

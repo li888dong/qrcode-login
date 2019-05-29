@@ -13,8 +13,8 @@
 <button onclick="showQRcode()">显示二维码</button>
 <script type="text/javascript">
     // 浏览器提供 WebSocket 对象
-    // var ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
-    var ws = new WebSocket('ws://127.0.0.1:2727');
+    var ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
+    // var ws = new WebSocket('ws://127.0.0.1:2727/');
 
     // 发送
     ws.onopen = function () {
@@ -31,9 +31,18 @@
                 height: 200,
                 text: 'https://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid
             });
-            console.log('https://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid)
-        } else if (resData.type === 'loginSuccess') {
-            location.href = 'w.hnsjb.cn'
+        } else if (resData.type == 'pcLogin') {
+            $.post(resData.reqUrl, function (res) {
+                var json = JSON.parse(res);
+                if (json.status == 1){
+                    console.log(json)
+                    // setTimeout(function () {
+                    //     window.location.href = 'http://content.henandaily.cn/index.php?m=admin&c=index&a=index&pc_hash='
+                    // },1000);
+                } else {
+                    alert(json.message)
+                }
+            })
         } else {
             alert('网络错误请刷新重试！')
         }

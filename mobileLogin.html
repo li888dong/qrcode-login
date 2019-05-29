@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <title>qrcode</title>
     <script src="lib/jquery.js"></script>
-    <script src="lib/socket.io.js"></script>
     <script>
+        // 河南日报
+        var wxRedirectUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx65ae0582854d87ac&redirect_uri=' + encodeURI(location.href.split('?')[0]) + '&response_type=code&scope=snsapi_userinfo&state=' + getQueryString('id') + '#wechat_redirect';
+        // 河南手机报
+        // var wxRedirectUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxa874a4ea498e6887&redirect_uri=' + encodeURI(location.href.split('?')[0]) + '&response_type=code&scope=snsapi_userinfo&state=' + getQueryString('id') + '#wechat_redirect';
 
         // 获取url参数的函数
         function getQueryString(name) {
@@ -17,32 +20,40 @@
             return null;
         }
 
+        if (!getQueryString('code')) {
+            setTimeout(function () {
+                location.href = wxRedirectUrl;
+            }, 1000)
+        } else {
+            document.write(location.href);
+            var ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
+            // var ws = new WebSocket('ws://127.0.0.1:2727');
 
-        // socket.io引入成功后，可通过io()生成客户端所需的socket对象。
-        let socket = io('192.168.50.6:3000');
+            // socket.on()用于接收服务端发来的消息
+            ws.onopen = function () {
 
-        // socket.on()用于接收服务端发来的消息
-        socket.on('connect', (data) => {
-            // socket.emmit()用户客户端向服务端发送消息，服务端与之对应的是socket.on()来接收信息。
-            socket.emit('mobileLogin', {id: getQueryString('id')});
-        });
-        socket.on('disconnect', () => {
-            console.log('client disconnect');
-        });
+                ws.send('wxLogin' + getQueryString('state') + 'wxLogin' + getQueryString('code'));
+            };
 
-        // 接受返回id 的事件
-        socket.on('loginSuccess', (data) => {
-            alert(data);
-            window.close();
-        })
+
+            // 接受返回id 的事件
+            ws.onmessage = function (msg) {
+                var resData = JSON.parse(msg.data);
+                if (resData.type === 'loginStatus') {
+                    alert(resData.data)
+                } else if (resData.type == 'pcLogin') {
+                    alert('扫码成功！')
+                } else {
+                    alert('登陆失败！')
+                }
+
+                // window.close();
+            }
+        }
+
     </script>
 </head>
 <body>
-<div id="qrcode"></div>
-
-<div id="sse">
-    <a href="javascript:socket.emit('reqAuthId', {msg: 'hi, server', id: Math.random()});">运行 WebSocket</a>
-</div>
 
 <script>
 
