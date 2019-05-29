@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="lib/qrcode.js"></script>
+    <script src="lib/jquery.js"></script>
+    <script src="lib/jquery.qrcode.js"></script>
+
+</head>
+<body>
+<div id="qrcode"></div>
+<button onclick="showQRcode()">显示二维码</button>
+<script type="text/javascript">
+    // 浏览器提供 WebSocket 对象
+    // var ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
+    var ws = new WebSocket('ws://127.0.0.1:2727');
+
+    // 发送
+    ws.onopen = function () {
+
+    };
+
+    // 接收
+    ws.onmessage = function (msg) {
+        var resData = JSON.parse(msg.data);
+        if (resData.type === 'receivedId') {
+            $('#qrcode').qrcode({
+                render: "canvas", //也可以替换为table
+                width: 200,
+                height: 200,
+                text: 'https://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid
+            });
+            console.log('https://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid)
+        } else if (resData.type === 'loginSuccess') {
+            location.href = 'w.hnsjb.cn'
+        } else {
+            alert('网络错误请刷新重试！')
+        }
+    };
+
+    ws.onclose = function (msg) {
+
+    };
+
+    function showQRcode() {
+        ws.send('reqAuthId')
+    }
+</script>
+</body>
+</html>
