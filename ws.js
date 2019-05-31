@@ -19,7 +19,7 @@ app.ws('/websocket/', function (ws, req) {
     // 接收客户端信息并把信息返回发送
     ws.on('message', (msg) => {
         if (msg == 'reqAuthId') {
-            request('https://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=get_code', function (err, res, body) {
+            request('http://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=get_code', function (err, res, body) {
                 var json = JSON.parse(body);
                 if (json.status == 1) {
                     clientid = json.data.admin_code;
@@ -41,7 +41,7 @@ app.ws('/websocket/', function (ws, req) {
 
             let authId = msg.split('wxLogin')[1];
             let code = msg.split('wxLogin')[2];
-            let reqUrl = 'https://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=weixin_login&admin_code=' + authId + '&code=' + code;
+            let reqUrl = 'http://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=weixin_login&admin_code=' + authId + '&code=' + code;
 
             let resData = {
                 type: 'pcLogin',

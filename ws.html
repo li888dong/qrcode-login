@@ -6,19 +6,40 @@
     <script src="lib/qrcode.js"></script>
     <script src="lib/jquery.js"></script>
     <script src="lib/jquery.qrcode.js"></script>
+    <script src="lib/jquery.cookie.js"></script>
 
 </head>
 <body>
 <div id="qrcode"></div>
-<button onclick="showQRcode()">显示二维码</button>
+<button id="showBtn" onclick="showQRcode()" style="display: none;">显示二维码</button>
+<form id="loginForm">
+    <input id="admin_code" type="hidden" name="admin_code">
+    <input id="code" type="hidden" name="code">
+</form>
 <script type="text/javascript">
+
+    // 获取url参数的函数
+    function getQueryString(url, name) {
+        var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)');
+        var r = url.match(reg);
+        if (r != null) {
+            return unescape(r[2]);
+        }
+        return null;
+    }
+
+
     // 浏览器提供 WebSocket 对象
     var ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
     // var ws = new WebSocket('ws://127.0.0.1:2727/');
 
     // 发送
     ws.onopen = function () {
-
+        if (ws.readyState >= 1) {
+            $('#showBtn').show()
+        } else {
+            alert('连接失败，请重试！')
+        }
     };
 
     // 接收
@@ -32,13 +53,24 @@
                 text: 'https://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid
             });
         } else if (resData.type == 'pcLogin') {
-            $.post(resData.reqUrl, function (res) {
+            // $('#admin_code').val(getQueryString(resData.reqUrl, 'admin_code'));
+            // $('#code').val(getQueryString(resData.reqUrl, 'code'));
+            // $('#loginForm').attr('action', resData.reqUrl).submit();
+            //
+            //
+            // return
+
+            $.get(resData.reqUrl, function (res) {
                 var json = JSON.parse(res);
-                if (json.status == 1){
-                    console.log(json)
-                    // setTimeout(function () {
-                    //     window.location.href = 'http://content.henandaily.cn/index.php?m=admin&c=index&a=index&pc_hash='
-                    // },1000);
+                if (json.status == 1) {
+                    console.log(json);
+                    for (var key in json.data) {
+                        $.cookie(key, json.data[key], { expires: 30,path: '/' });
+                    }
+
+                    setTimeout(function () {
+                        window.location.href = 'http://content.henandaily.cn/index.php?m=admin&c=index&a=init'
+                    },3000);
                 } else {
                     alert(json.message)
                 }
@@ -50,6 +82,10 @@
 
     ws.onclose = function (msg) {
 
+    };
+
+    ws.onerror = function () {
+        alert('连接未就绪，请稍后再试！')
     };
 
     function showQRcode() {
