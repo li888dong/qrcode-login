@@ -1,12 +1,10 @@
-const Vue = require('vue');
-const renderer = require('vue-server-renderer').createRenderer();
 
 const express = require('express');
 const app = express();
 const expressWs = require('express-ws')(app);
 const request = require('request');
 
-app.get('*', (req, res) => {
+app.get('/websocket/userinfo/', (req, res) => {
 // 设置允许访问的请求头
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept,Authorization");
@@ -53,9 +51,9 @@ app.get('*', (req, res) => {
 let socketList = {};
 // 服务器被客户端连接
 
-app.ws('/websocket', function (ws, req) {
+app.ws('/websocket/', function (ws, req) {
     let clientid;
-
+    console.log('connect start');
     //socket失去连接时触发（包括关闭浏览器，主动断开，掉线等任何断开连接的情况）
     ws.on('disconnect', function () {
         console.log("client disconnect");
@@ -88,7 +86,7 @@ app.ws('/websocket', function (ws, req) {
 
             let authId = msg.split('wxLogin')[1];
             let code = msg.split('wxLogin')[2];
-            let reqUrl = 'http://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=weixin_login&admin_code=' + authId + '&code=' + code;
+            let reqUrl = 'https://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=weixin_login&admin_code=' + authId + '&code=' + code;
 
             let resData = {
                 type: 'pcLogin',
