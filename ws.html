@@ -18,17 +18,6 @@
 </form>
 <script type="text/javascript">
 
-    // 获取url参数的函数
-    function getQueryString(url, name) {
-        var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)');
-        var r = url.match(reg);
-        if (r != null) {
-            return unescape(r[2]);
-        }
-        return null;
-    }
-
-
     // 浏览器提供 WebSocket 对象
     var ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
     // var ws = new WebSocket('ws://127.0.0.1:2727/');
@@ -53,24 +42,17 @@
                 text: 'https://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid
             });
         } else if (resData.type == 'pcLogin') {
-            // $('#admin_code').val(getQueryString(resData.reqUrl, 'admin_code'));
-            // $('#code').val(getQueryString(resData.reqUrl, 'code'));
-            // $('#loginForm').attr('action', resData.reqUrl).submit();
-            //
-            //
-            // return
-
             $.get(resData.reqUrl, function (res) {
                 var json = JSON.parse(res);
                 if (json.status == 1) {
                     console.log(json);
                     for (var key in json.data) {
-                        $.cookie(key, json.data[key], { expires: 30,path: '/' });
+                        $.cookie(key, json.data[key], {expires: 30, path: '/'});
                     }
 
                     setTimeout(function () {
                         window.location.href = 'http://content.henandaily.cn/index.php?m=admin&c=index&a=init'
-                    },3000);
+                    }, 3000);
                 } else {
                     alert(json.message)
                 }

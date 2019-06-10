@@ -1,12 +1,59 @@
-var express = require('express');
-var app = express();
-var expressWs = require('express-ws')(app);
+const Vue = require('vue');
+const renderer = require('vue-server-renderer').createRenderer();
+
+const express = require('express');
+const app = express();
+const expressWs = require('express-ws')(app);
 const request = require('request');
 
+app.get('*', (req, res) => {
+// 设置允许访问的请求头
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept,Authorization");
+    res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
+    res.header("X-Powered-By", '3.2.1');
+
+    const wxAppId = 'wxa874a4ea498e6887';
+    const wxAppSecret = '45c76a1090d62132ce83dbea2a426cff';
+    const wxCode = req.query.code;
+
+    if (wxCode) {
+        request('https://api.weixin.qq.com/sns/oauth2/access_token?appid=' + wxAppId + '&secret=' + wxAppSecret + '&code=' + wxCode + '&grant_type=authorization_code', function (err, response, body) {
+            if (response.statusCode == 200) {
+                // console.log(JSON.parse(body));
+                var data = JSON.parse(body);
+                var access_token = data.access_token;
+                var openid = data.openid;
+                console.log('accesstoken', access_token);
+                request.get(
+                    {
+                        url: 'https://api.weixin.qq.com/sns/userinfo?access_token=' + access_token + '&openid=' + openid + '&lang=zh_CN',
+                    },
+                    function (err, response, body) {
+                        if (response.statusCode == 200) {
+                            // 第四步：根据获取的用户信息进行对应操作
+                            var userinfo = JSON.parse(body);
+                            //console.log(JSON.parse(body));
+                            console.log('获取微信信息成功！' ,userinfo);
+                            res.send(userinfo)
+                        } else {
+                            next(err)
+                        }
+                    }
+                );
+            } else {
+                next(err)
+            }
+        });
+    }
+});
+
+
+// websocket连接
 let socketList = {};
 // 服务器被客户端连接
 
-app.ws('/websocket/', function (ws, req) {
+app.ws('/websocket', function (ws, req) {
     let clientid;
 
     //socket失去连接时触发（包括关闭浏览器，主动断开，掉线等任何断开连接的情况）
