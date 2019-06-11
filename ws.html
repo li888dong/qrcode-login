@@ -3,6 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+
+    <link href="http://content.henandaily.cn/statics/css/muntime/style.css" rel="stylesheet" type="text/css">
+    <link href="http://content.henandaily.cn/statics/css/muntime/font-awesome/css/font-awesome.min.css" rel="stylesheet"
+          type="text/css">
+
+    <link rel="stylesheet" type="text/css" href="http://content.henandaily.cn/statics/css/muntime/styles1.css"
+          title="styles1" media="screen">
+    <link rel="alternate stylesheet" type="text/css" href="http://content.henandaily.cn/statics/css/muntime/styles2.css"
+          title="styles2" media="screen">
+    <link rel="alternate stylesheet" type="text/css" href="http://content.henandaily.cn/statics/css/muntime/styles3.css"
+          title="styles3" media="screen">
+
+    <script type="text/javascript" src="http://content.henandaily.cn/statics/js/jquery.min.js"></script>
+    <script type="text/javascript" src="http://content.henandaily.cn/statics/js/styleswitch.js"></script>
+    <script type="text/javascript" src="http://content.henandaily.cn/statics/css/muntime/Particleground.js"></script>
+
+    <style type="text/css">html, body {
+        height: 100%;
+        position: relative;
+    }</style>
+
+
     <script src="lib/qrcode.js"></script>
     <script src="lib/jquery.js"></script>
     <script src="lib/jquery.qrcode.js"></script>
@@ -10,13 +32,44 @@
 
 </head>
 <body>
+<div class="loading" style="display: none">加载中...</div>
 <div id="qrcode"></div>
 <button id="showBtn" onclick="showQRcode()" style="display: none;">显示二维码</button>
-<form id="loginForm">
-    <input id="admin_code" type="hidden" name="admin_code">
-    <input id="code" type="hidden" name="code">
-</form>
+
+
+<div class="admin_login" style="display:none;">
+    <form id="loginForm" action="http://content.henandaily.cn/index.php?m=admin&c=hnsjb_index&a=login&dosubmit=1"
+          method="post"
+          name="myform">
+        <div class="admin_title">
+            <strong>绑定手机号</strong>
+        </div>
+        <div class="admin_user">
+            <input id="loginTel" type="text" name="mobile" placeholder="手机号" class="login_txt">
+        </div>
+        <div class="admin_val">
+            <input id="loginYzm" type="text" name="code" placeholder="验证码" maxlength="6" class="login_txt left"
+                   style="width: 200px">
+
+            <div id="yzm" class="right" onclick="getVerify()" style="line-height: 42px;cursor: pointer">获取验证码</div>
+            <span class="timer right" style="line-height: 42px;cursor: pointer;display: none">60秒</span>
+        </div>
+        <!--<div class="admin_val input-container-verify" style="display: none">-->
+        <!--<input type="text" name="code" placeholder="验证码" maxlength="4" class="login_txt left"><span class="timer right" style="line-height: 42px;cursor: pointer">80秒</span>-->
+        <!--</div>-->
+        <div class="admin_sub">
+            <span class="submit_btn" onclick="login()"
+                  style="display: block;text-align: center;line-height: 40px;cursor: pointer">立即绑定</span>
+        </div>
+        <div class="admin_info">
+            <p>© 2015-2017 河南日报</p>
+        </div>
+    </form>
+</div>
 <script type="text/javascript">
+    var wx_openid = '';
+    var wx_img = '';
+    var wx_nickname = '';
 
     // 浏览器提供 WebSocket 对象
     var ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
@@ -24,8 +77,12 @@
 
     // 发送
     ws.onopen = function () {
-        if (ws.readyState >= 1) {
-            $('#showBtn').show()
+        if (ws.readyState == 0) {
+            $('.loading').show();
+            $('#showBtn').hide();
+        } else if (ws.readyState == 1) {
+            $('.loading').hide();
+            $('#showBtn').show();
         } else {
             alert('连接失败，请重试！')
         }
@@ -34,8 +91,9 @@
     // 接收
     ws.onmessage = function (msg) {
         var resData = JSON.parse(msg.data);
+        console.log(resData);
         if (resData.type === 'receivedId') {
-            $('#qrcode').qrcode({
+            $('#qrcode').empty().qrcode({
                 render: "canvas", //也可以替换为table
                 width: 200,
                 height: 200,
@@ -52,7 +110,14 @@
 
                     setTimeout(function () {
                         window.location.href = '/index.php?m=admin&c=index&a=init'
-                    }, 3000);
+                    }, 1000);
+                } else if (json.status == -2) {
+                    alert(json.message);
+                    $('#qrcode').hide();
+                    $('.admin_login').show();
+                    wx_openid = json.data.wx_openid;
+                    wx_img = json.data.wx_img;
+                    wx_nickname = json.data.wx_nickname;
                 } else {
                     alert(json.message)
                 }
@@ -71,7 +136,107 @@
     };
 
     function showQRcode() {
-        ws.send('reqAuthId')
+        $('#qrcode').show();
+        $('.admin_login').hide();
+        if (ws.readyState == 1) {
+            $('#showBtn').show();
+            ws.send('reqAuthId')
+        } else {
+            ws = new WebSocket('wss://www.hnsjb.cn/websocket/');
+        }
+    }
+</script>
+
+<script>
+
+    // 获取url参数的函数
+    function getQueryString(name) {
+        var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)');
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) {
+            return unescape(r[2]);
+        }
+        return null;
+    }
+
+
+    var $loginTel = $('#loginTel');
+    var $loginYzm = $('#loginYzm');
+
+
+    function checkTel(telNum) {
+        return /1\d{10}/.test(telNum)
+    }
+
+
+    function checkVerify(verify) {
+        return /[A-Za-z0-9]/.test(verify)
+    }
+
+    function getVerify() {
+        if (!checkTel($loginTel.val())) {
+            alert('请输入正确手机号');
+            return
+        }
+
+        $.get('http://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=send_sms&mobile=' + $loginTel.val() + '&type=admin_fast_login', function (res) {
+            var json = JSON.parse(res);
+            if (json.status == 1) {
+                var timeNum;
+                var timer;
+                timeNum = 60;
+                $('.timer').show();
+                $('#yzm').hide();
+
+                timer = setInterval(function () {
+                    $('.timer').text(timeNum-- + '秒');
+                    if (timeNum < 0) {
+                        clearInterval(timer);
+                        $('.timer').html('<span class="color_5b89c5" onclick="getVerify()">收不到验证码？点击重试<span>');
+                    }
+                }, 1000)
+            } else {
+                alert(json.message)
+            }
+
+        });
+
+    }
+
+    function login() {
+
+        if (!checkTel($loginTel.val())) {
+            alert('请输入正确手机号码');
+            return
+        }
+        if (!checkVerify($loginYzm.val())) {
+            alert('请输入验证码');
+            return
+        }
+
+        $.post('http://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=fast_login', {
+            mobile: $loginTel.val(),
+            code: $loginYzm.val(),
+            wx_img: wx_img,
+            wx_nickname: wx_nickname,
+            wx_openid: wx_openid
+        }, function (res) {
+            var json = JSON.parse(res);
+            if (json.status == 1) {
+                console.log(json);
+                for (var key in json.data) {
+                    $.cookie(key, json.data[key], {expires: 30, path: '/'});
+                }
+
+                setTimeout(function () {
+                    window.location.href = '/index.php?m=admin&c=index&a=init'
+                }, 1000);
+            } else {
+                alert(json.message)
+            }
+
+        });
+
     }
 </script>
 </body>
