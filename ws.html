@@ -39,7 +39,7 @@
                 render: "canvas", //也可以替换为table
                 width: 200,
                 height: 200,
-                text: 'https://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid
+                text: 'http://www.henandaily.cn/content/special/test2/mobileLogin.html?id=' + resData.clientid
             });
         } else if (resData.type == 'pcLogin') {
             $.get(resData.reqUrl, function (res) {
@@ -51,7 +51,7 @@
                     }
 
                     setTimeout(function () {
-                        window.location.href = 'http://content.henandaily.cn/index.php?m=admin&c=index&a=init'
+                        window.location.href = '/index.php?m=admin&c=index&a=init'
                     }, 3000);
                 } else {
                     alert(json.message)

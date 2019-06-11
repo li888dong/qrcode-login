@@ -86,7 +86,7 @@ app.ws('/websocket/', function (ws, req) {
 
             let authId = msg.split('wxLogin')[1];
             let code = msg.split('wxLogin')[2];
-            let reqUrl = 'https://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=weixin_login&admin_code=' + authId + '&code=' + code;
+            let reqUrl = 'http://content.henandaily.cn/index.php?m=hnsjb&c=wx_admin&a=weixin_login&admin_code=' + authId + '&code=' + code;
 
             let resData = {
                 type: 'pcLogin',
